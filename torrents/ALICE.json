@@ -1,0 +1,9 @@
+{
+    "name_file": "ALICE.txt",
+    "ip_adress": "192.168.1.3",
+    "pieces": {
+      "part1": "aaa",
+      "part2": "bbb"
+    }
+}
+  
