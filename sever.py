@@ -1,65 +1,37 @@
-# import socket programming library
 import socket
-
-# import thread module
-from _thread import *
 import threading
+import sys
 
-print_lock = threading.Lock()
+def threaded(c, addr):
+    with c:
+        print(f"Connected to: {addr}")
+        while True:
+            data = c.recv(1024)
+            if not data:
+                print(f"Bye {addr}")
+                break
+            c.send(data)
+        print(f"Connection closed with {addr}")
 
-# thread function
-def threaded(c):
-	while True:
+def main():
+    host = '0.0.0.0'
+    port = 12345
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((host, port))
+        s.listen(5)
+        print(f"Socket is bound to port {port}, and is listening...")
 
-		# data received from client
-		data = c.recv(1024)
-		if not data:
-			print('Bye')
-			
-			# lock released on exit
-			print_lock.release()
-			break
-
-		# reverse the given string from client
-		data = data[::-1]
-
-		# send back reversed string to client
-		c.send(data)
-
-	# connection closed
-	c.close()
-
-
-def Main():
-	host = '0.0.0.0'
-	print(host)
-
-	# reserve a port on your computer
-	# in our case it is 12345 but it
-	# can be anything
-	port = 12345
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.bind((host, port))
-	print("socket binded to port", port)
-
-	# put the socket into listening mode
-	s.listen(5)
-	print("socket is listening")
-
-	# a forever loop until client wants to exit
-	while True:
-
-		# establish connection with client
-		c, addr = s.accept()
-
-		# lock acquired by client
-		print_lock.acquire()
-		print('Connected to :', addr[0], ':', addr[1])
-
-		# Start a new thread and return its identifier
-		start_new_thread(threaded, (c,))
-	s.close()
-
+        try:
+            while True:
+                c, addr = s.accept()
+                threading.Thread(target=threaded, args=(c, addr)).start()
+        except KeyboardInterrupt:
+            print("\nServer is shutting down.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+        finally:
+            s.close()
+            print("Socket closed.")
 
 if __name__ == '__main__':
-	Main()
+    main()
