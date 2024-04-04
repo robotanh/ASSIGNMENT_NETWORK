@@ -1,0 +1,9 @@
+Logic:
+
+seeder (client online để gửi piece): 
+	Sever gửi về (string type):
+	- "INFO": thì seeder sẽ gửi list file (string type) bao gồm tên các piece
+	- "SEND": thì seeder sẽ ngắt kết nối với sever và tự setup thành 1 sever với thằng cần download piece và gửi piece
+
+downloader:
+	- chưa biết phải làm gì mà chắc là tui sẽ xử lý cái file link torrent xong gửi cho sever 1 cái Magnet text (chắc vậy)
