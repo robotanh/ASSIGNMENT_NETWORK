@@ -1,9 +1,22 @@
 {
     "name_file": "ALICE.txt",
-    "ip_adress": "192.168.1.3",
-    "pieces": {
-      "part1": "aaa",
-      "part2": "bbb"
-    }
+    "ip_address": "192.168.1.3",
+    "pieces": [
+        "ALICE.txt_part1",
+        "ALICE.txt_part10",
+        "ALICE.txt_part11",
+        "ALICE.txt_part12",
+        "ALICE.txt_part13",
+        "ALICE.txt_part14",
+        "ALICE.txt_part15",
+        "ALICE.txt_part16",
+        "ALICE.txt_part2",
+        "ALICE.txt_part3",
+        "ALICE.txt_part4",
+        "ALICE.txt_part5",
+        "ALICE.txt_part6",
+        "ALICE.txt_part7",
+        "ALICE.txt_part8",
+        "ALICE.txt_part9"
+    ]
 }
-  
