@@ -30,6 +30,7 @@ class Client:
         filenames = [f for f in filenames if os.path.isfile(os.path.join(folder_path, f))]
         return filenames
 
+    #send file to other client
     def serve_file_piece(self):
         # Setup server to send file piece to other client
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
