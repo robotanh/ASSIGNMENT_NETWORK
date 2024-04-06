@@ -1,6 +1,7 @@
 import socket
 import os
 import json
+from client_action import *
 
 class Client:
     def __init__(self, host, port):
@@ -65,5 +66,6 @@ if __name__ == '__main__':
     client = Client(host, port)
     client.connect()
     client.send_json_file()
+    send_missing_pieces()
 
     client.close()
