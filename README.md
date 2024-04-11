@@ -1,6 +1,6 @@
 client.py:
     - include client_action.py
-    - xử lý file torrent (json) trong đó, so sánh các file trong folder tương ứng với nội dung trong torrent. Liệt kê ra những file trong folder không có và gửi cho sever
+    - xử lý file torrent (json) trong đó, so sánh các file trong folder tương ứng với nội dung trong torrent. Liệt kê ra những file trong folder không có và gửi cho server
 
 seeder (client online để gửi piece): 
 	Sever gửi về (string type):
