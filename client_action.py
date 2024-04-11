@@ -17,12 +17,13 @@ def find_missing_pieces(json_data, folder_path):
     
     # Find the difference between the required pieces and existing files
     missing_pieces = required_pieces - existing_files
-    return missing_pieces
+    missing_pieces_json = json.dumps(list(missing_pieces))
+    return missing_pieces_json
 
 def queue_missing_pieces_for_download(missing_pieces):
     """Queue the missing pieces for download. Implement according to your needs."""
     # This is a placeholder. You might want to implement actual download logic here.
-    print("Queueing these pieces for download:", missing_pieces)
+    return missing_pieces
 
 def send_missing_pieces():
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +36,7 @@ def send_missing_pieces():
     json_data = load_json_data(json_path)
     missing_pieces = find_missing_pieces(json_data, folder_path)
     if missing_pieces:
-        queue_missing_pieces_for_download(missing_pieces)
+        return queue_missing_pieces_for_download(missing_pieces)
     else:
         print("All pieces are present in the folder.")
 

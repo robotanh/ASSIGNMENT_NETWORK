@@ -1,7 +1,9 @@
+import subprocess
+import re
 import socket
 import os
 
-class Client:
+class Seeder:
     def __init__(self, host, port):
         self.host = host
         self.port = port
@@ -23,7 +25,11 @@ class Client:
     def close(self):
         self.socket.close()
 
-    #send file to other client
+    """
+
+    SEND LIST OF FILE HAVING IN COMPUTER TO SEVER
+
+    """
     def serve_file_piece(self):
         # Setup server to send file piece to other client
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -74,10 +80,28 @@ class Client:
             # Optionally, reconnect to main server after serving
             # self.connect()
 
-if __name__ == '__main__':
-    host = '192.168.1.3'
+    """
+
+    SEND FLAG, IPADDRESS, PORT TO SEVER
+
+    """
+    def get_wireless_ip(self):
+        # Run the 'ipconfig' command
+        result = subprocess.run(['ipconfig'], stdout=subprocess.PIPE, text=True)
+        output = result.stdout
+
+        # Look for the Wi-Fi section and extract the IPv4 Address
+        wireless_section = re.search(r'(Wireless LAN adapter Wi-Fi.*?)(?:\r?\n\r?\n)', output, re.DOTALL)
+        if wireless_section:
+            ip_address_match = re.search(r'IPv4 Address[ .:]+(.*)', wireless_section.group(1))
+            if ip_address_match:
+                self.send_message(ip_address_match.group(1).strip())
+        return "Not Found"
+
+def seeder_mode():
+    host = '10.128.142.39'
     port = 12345
-    client = Client(host, port)
+    client = Seeder(host, port)
     client.connect()
     client.send_filenames_to_server()
     client.close()

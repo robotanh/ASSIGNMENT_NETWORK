@@ -32,12 +32,15 @@ class Client:
             return
 
         with open(file_path, 'r') as f:
-            json_data = json.load(f)
-            json_str = json.dumps(json_data)
-            #print(json_str)
-            self.send_message(json_str)
-            received_message = self.receive_message()
-            print('Received from the server:', received_message)
+            # json_data = json.load(f)
+            # json_str = json.dumps(json_data)
+            # print(json_str)
+            # self.send_message(json_str) 
+            missing_pieces_json =send_missing_pieces()
+            if missing_pieces_json:
+                self.send_message(missing_pieces_json)
+                received_message = self.receive_message()   
+                print('Received from the server:', received_message)
 
 
     def send_filenames_to_server(self):
@@ -60,12 +63,11 @@ class Client:
         filenames = [f for f in filenames if os.path.isfile(os.path.join(folder_path, f))]
         return filenames
 
-if __name__ == '__main__':
-    host = '192.168.1.3'
+def client_mode():
+    host = '10.128.142.39'
     port = 12345
     client = Client(host, port)
     client.connect()
     client.send_json_file()
-    send_missing_pieces()
-
+    # send_missing_pieces()
     client.close()
