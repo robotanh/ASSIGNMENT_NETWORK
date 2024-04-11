@@ -1,5 +1,6 @@
 import subprocess
 import re
+import json
 import socket
 import os
 
@@ -85,23 +86,27 @@ class Seeder:
     SEND FLAG, IPADDRESS, PORT TO SEVER
 
     """
-    def get_wireless_ip(self):
-        # Run the 'ipconfig' command
-        result = subprocess.run(['ipconfig'], stdout=subprocess.PIPE, text=True)
-        output = result.stdout
-
-        # Look for the Wi-Fi section and extract the IPv4 Address
-        wireless_section = re.search(r'(Wireless LAN adapter Wi-Fi.*?)(?:\r?\n\r?\n)', output, re.DOTALL)
-        if wireless_section:
-            ip_address_match = re.search(r'IPv4 Address[ .:]+(.*)', wireless_section.group(1))
-            if ip_address_match:
-                self.send_message(ip_address_match.group(1).strip())
-        return "Not Found"
+    def send_message(self):
+        try:
+            hostname = socket.gethostname()
+            ipv4_address = socket.gethostbyname(hostname)
+            message = {
+                "flag": "SEEDER",
+                "ip_address": ipv4_address,
+                "port": 23456
+            }
+            self.socket.send(json.dumps(message).encode('utf-8'))
+            received_message = self.receive_message()
+            print('Received from the server:', received_message)
+        except socket.gaierror:
+            print("There was an error resolving the hostname.")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
 
 def seeder_mode():
     host = '10.128.142.39'
     port = 12345
     client = Seeder(host, port)
     client.connect()
-    client.send_filenames_to_server()
+    client.send_message()
     client.close()
