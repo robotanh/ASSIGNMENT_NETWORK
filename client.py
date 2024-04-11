@@ -24,6 +24,10 @@ class Client:
     def close(self):
         self.socket.close()
 
+    """
+    SEND LIST OF FILES THAT DIFFERENT FROM TORRENT FILE
+    """
+
     def send_json_file(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(current_dir, 'torrents', 'ALICE.json')  # Adjust file path
@@ -62,12 +66,29 @@ class Client:
         filenames = os.listdir(folder_path)
         filenames = [f for f in filenames if os.path.isfile(os.path.join(folder_path, f))]
         return filenames
+    def send_message(self):
+        try:
+            hostname = socket.gethostname()
+            ipv4_address = socket.gethostbyname(hostname)
+            message = {
+                "flag": "CLIENT",
+                "ip_address": ipv4_address,
+                "port": 23456
+            }
+            self.socket.send(json.dumps(message).encode('utf-8'))
+            received_message = self.receive_message()
+            print('Received from the server:', received_message)
+        except socket.gaierror:
+            print("There was an error resolving the hostname.")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
 
 def client_mode():
     host = '10.128.142.39'
     port = 12345
     client = Client(host, port)
     client.connect()
-    client.send_json_file()
+    # client.send_json_file()
     # send_missing_pieces()
+    client.send_message()
     client.close()
