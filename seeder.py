@@ -1,7 +1,10 @@
+import subprocess
+import re
+import json
 import socket
 import os
 
-class Client:
+class Seeder:
     def __init__(self, host, port):
         self.host = host
         self.port = port
@@ -23,7 +26,11 @@ class Client:
     def close(self):
         self.socket.close()
 
-    #send file to other client
+    """
+
+    SEND LIST OF FILE HAVING IN COMPUTER TO SEVER
+
+    """
     def serve_file_piece(self):
         # Setup server to send file piece to other client
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -74,10 +81,32 @@ class Client:
             # Optionally, reconnect to main server after serving
             # self.connect()
 
-if __name__ == '__main__':
-    host = '192.168.1.3'
+    """
+
+    SEND FLAG, IPADDRESS, PORT TO SEVER
+
+    """
+    def send_message(self):
+        try:
+            hostname = socket.gethostname()
+            ipv4_address = socket.gethostbyname(hostname)
+            message = {
+                "flag": "SEEDER",
+                "ip_address": ipv4_address,
+                "port": 23456
+            }
+            self.socket.send(json.dumps(message).encode('utf-8'))
+            received_message = self.receive_message()
+            print('Received from the server:', received_message)
+        except socket.gaierror:
+            print("There was an error resolving the hostname.")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
+def seeder_mode():
+    host = '10.128.142.39'
     port = 12345
-    client = Client(host, port)
+    client = Seeder(host, port)
     client.connect()
-    client.send_filenames_to_server()
+    client.send_message()
     client.close()

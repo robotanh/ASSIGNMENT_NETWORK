@@ -1,6 +1,7 @@
 import socket
 import os
 import json
+from client_action import *
 
 class Client:
     def __init__(self, host, port):
@@ -23,6 +24,10 @@ class Client:
     def close(self):
         self.socket.close()
 
+    """
+    SEND LIST OF FILES THAT DIFFERENT FROM TORRENT FILE
+    """
+
     def send_json_file(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(current_dir, 'torrents', 'ALICE.json')  # Adjust file path
@@ -31,12 +36,15 @@ class Client:
             return
 
         with open(file_path, 'r') as f:
-            json_data = json.load(f)
-            json_str = json.dumps(json_data)
-            #print(json_str)
-            self.send_message(json_str)
-            received_message = self.receive_message()
-            print('Received from the server:', received_message)
+            # json_data = json.load(f)
+            # json_str = json.dumps(json_data)
+            # print(json_str)
+            # self.send_message(json_str) 
+            missing_pieces_json =send_missing_pieces()
+            if missing_pieces_json:
+                self.send_message(missing_pieces_json)
+                received_message = self.receive_message()   
+                print('Received from the server:', received_message)
 
 
     def send_filenames_to_server(self):
@@ -58,12 +66,29 @@ class Client:
         filenames = os.listdir(folder_path)
         filenames = [f for f in filenames if os.path.isfile(os.path.join(folder_path, f))]
         return filenames
+    def send_message(self):
+        try:
+            hostname = socket.gethostname()
+            ipv4_address = socket.gethostbyname(hostname)
+            message = {
+                "flag": "CLIENT",
+                "ip_address": ipv4_address,
+                "port": 23456
+            }
+            self.socket.send(json.dumps(message).encode('utf-8'))
+            received_message = self.receive_message()
+            print('Received from the server:', received_message)
+        except socket.gaierror:
+            print("There was an error resolving the hostname.")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
 
-if __name__ == '__main__':
-    host = '192.168.1.3'
+def client_mode():
+    host = '10.128.142.39'
     port = 12345
     client = Client(host, port)
     client.connect()
-    client.send_json_file()
-
+    # client.send_json_file()
+    # send_missing_pieces()
+    client.send_message()
     client.close()
