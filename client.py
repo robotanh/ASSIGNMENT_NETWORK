@@ -66,7 +66,7 @@ class Client:
         filenames = os.listdir(folder_path)
         filenames = [f for f in filenames if os.path.isfile(os.path.join(folder_path, f))]
         return filenames
-    def send_message(self):
+    def send_message_to_sever(self):
         try:
             hostname = socket.gethostname()
             ipv4_address = socket.gethostbyname(hostname)
@@ -76,13 +76,18 @@ class Client:
                 "port": 23456
             }
             self.socket.send(json.dumps(message).encode('utf-8'))
-            received_message = self.receive_message()
-            print('Received from the server:', received_message)
+            received_message = self.receive_message()          
+            return received_message
         except socket.gaierror:
             print("There was an error resolving the hostname.")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-
+        return None
+    
+def action(client):
+    received_message = client.send_message_to_sever()
+    print('Received from the server:', received_message)
+    
 def client_mode():
     host = '192.168.1.3'
     port = 12345
@@ -90,5 +95,5 @@ def client_mode():
     client.connect()
     # client.send_json_file()
     # send_missing_pieces()
-    client.send_message()
+    action(client)
     client.close()

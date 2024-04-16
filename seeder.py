@@ -3,6 +3,7 @@ import re
 import json
 import socket
 import os
+import sys
 
 class Seeder:
     def __init__(self, host, port):
@@ -86,7 +87,7 @@ class Seeder:
     SEND FLAG, IPADDRESS, PORT TO SEVER
 
     """
-    def send_message(self):
+    def send_message_to_sever(self):
         try:
             hostname = socket.gethostname()
             ipv4_address = socket.gethostbyname(hostname)
@@ -102,11 +103,53 @@ class Seeder:
             print("There was an error resolving the hostname.")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
+def action():
+    HOST = '0.0.0.0'  # localhost
+    PORT = 13456        # Example port, you can choose any available port
+
+    # Create a socket object
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # Bind the socket to the host and port
+    try:
+        # Bind the socket to the host and port
+        server_socket.bind((HOST, PORT))
+        
+        # Start listening for incoming connections
+        server_socket.listen(5)  # Maximum number of queued connections
+        
+        print(f"Server listening on {HOST}:{PORT}...")
+
+        while True:
+            # Accept incoming connection
+            client_socket, client_address = server_socket.accept()
+            
+            print(f"Connection from {client_address} has been established.")
+            
+            # Receive data from the client
+            while True:
+                data = client_socket.recv(1024)  # Buffer size
+                if not data:
+                    break
+                print(f"Received from client: {data.decode()}")
+                
+                # Echo back the received data
+                client_socket.sendall(data)
+            
+            # Close the connection with the client
+            client_socket.close()
+
+    except KeyboardInterrupt:
+        print("\nKeyboard interrupt detected. Shutting down the server...")
+        server_socket.close()
+        sys.exit(0)
+
 
 def seeder_mode():
     host = '192.168.1.3'
     port = 12345
     client = Seeder(host, port)
     client.connect()
-    client.send_message()
+    client.send_message_to_sever()
+    action()
     client.close()
