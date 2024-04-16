@@ -104,7 +104,7 @@ class Seeder:
             print(f"An unexpected error occurred: {e}")
 
 def seeder_mode():
-    host = '10.128.142.39'
+    host = '192.168.1.3'
     port = 12345
     client = Seeder(host, port)
     client.connect()

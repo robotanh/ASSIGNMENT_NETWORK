@@ -39,7 +39,7 @@ import json
 peers_list = []
 lock = threading.Lock()
 
-def handle_peer_connection(client_socket):
+def handle_peer_connection(client_socket,client_address):
     request = client_socket.recv(1024).decode('utf-8')
     try:
         request_data = json.loads(request)
@@ -52,13 +52,12 @@ def handle_peer_connection(client_socket):
             response_data = {
             "Peers": peers_list
             }
-
-            peers_list.append({
-            "flag": flag,
-            "ip_address": ip_address,
-            "port": port,
-            })
             if (flag != "CLIENT"):
+                peers_list.append({
+                    "flag": flag,
+                    "ip_address": ip_address,
+                    "port": port,
+                })
                 response_data.clear()
                 response_data['failure_reason'] = "Not client"
             else:
@@ -74,6 +73,7 @@ def handle_peer_connection(client_socket):
         
         response = json.dumps(response_data)
         client_socket.send(response.encode('utf-8'))
+        print(f"Closed connection with {client_address[0]}:{client_address[1]}")
     except json.JSONDecodeError:
         print("Invalid JSON received")
     except KeyboardInterrupt: 
@@ -90,7 +90,7 @@ def start_server(host, port):
         client_socket, client_address = server_socket.accept()
 
         print(f"Accepted connection from {client_address[0]}:{client_address[1]}")
-        handle_peer_connection(client_socket)
+        handle_peer_connection(client_socket,client_address)
 
 
 if __name__ == '__main__':

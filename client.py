@@ -84,7 +84,7 @@ class Client:
             print(f"An unexpected error occurred: {e}")
 
 def client_mode():
-    host = '10.128.142.39'
+    host = '192.168.1.3'
     port = 12345
     client = Client(host, port)
     client.connect()
