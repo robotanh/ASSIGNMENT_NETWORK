@@ -4,6 +4,7 @@ import json
 import socket
 import os
 import sys
+import struct
 
 class Seeder:
     def __init__(self, host, port):
@@ -103,16 +104,15 @@ class Seeder:
             print("There was an error resolving the hostname.")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
+
 def action():
-    HOST = '0.0.0.0'  # localhost
-    PORT = 13456        # Example port, you can choose any available port
+    HOST = '0.0.0.0'  
+    PORT = 23456        
 
     # Create a socket object
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # Bind the socket to the host and port
     try:
-        # Bind the socket to the host and port
         server_socket.bind((HOST, PORT))
         
         # Start listening for incoming connections

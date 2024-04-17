@@ -1,6 +1,7 @@
 import socket
 import os
 import json
+import struct
 from client_action import *
 
 class Client:
@@ -66,6 +67,8 @@ class Client:
         filenames = os.listdir(folder_path)
         filenames = [f for f in filenames if os.path.isfile(os.path.join(folder_path, f))]
         return filenames
+    
+
     def send_message_to_sever(self):
         try:
             hostname = socket.gethostname()
@@ -83,10 +86,40 @@ class Client:
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
         return None
+"""
+when server return a list of peer, connect_with_peers get a list of peers and connect 
+one by one to get pieces
+"""
+def connect_with_peers(peers_list_json):
+    connected_peers = []
+
+    # Convert JSON string back to a Python list of dictionaries
+    peers_dict = json.loads(peers_list_json)
+    peers_list = peers_dict.get("Peers", [])
+
+    ip_address = None
+    port = None
+    for peer_info in peers_list:
+
+        try:
+            peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            ip_address = peer_info["ip_address"]
+            port = peer_info["port"]
+            # print("Attempting connection to:", ip_address, ":", port)  
+            peer_socket.connect((ip_address, port))  # Pass IP address and port as a tuple
+            connected_peers.append(peer_socket)
+            print(f"Connected to peer: {ip_address}:{port}")
+        except ConnectionRefusedError:
+            print(f"Connection to peer {ip_address}:{port} refused")
+        except Exception as e:
+            print(f"Error connecting to peer {ip_address}:{port}: {e}")
+            print("Peer info:", peer_info)
+
     
 def action(client):
     received_message = client.send_message_to_sever()
-    print('Received from the server:', received_message)
+    # print('Received from the server:', received_message)
+    connect_with_peers(received_message)
     
 def client_mode():
     host = '192.168.1.3'
