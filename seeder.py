@@ -26,6 +26,7 @@ class Seeder:
         return self.socket.recv(1024).decode('ascii')
 
     def close(self):
+        print(f"Closed connection with {self.host}:{self.port}")
         self.socket.close()
 
     """
@@ -138,6 +139,7 @@ def action():
             
             # Close the connection with the client
             client_socket.close()
+            print(f"Closed connection with {client_socket}:{client_address}")
 
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected. Shutting down the server...")

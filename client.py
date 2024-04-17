@@ -23,6 +23,7 @@ class Client:
         return self.socket.recv(1024).decode('ascii')
 
     def close(self):
+        print(f"Closed connection with {self.host}:{self.port}")
         self.socket.close()
 
     """
@@ -102,18 +103,25 @@ def connect_with_peers(peers_list_json):
     for peer_info in peers_list:
 
         try:
-            peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             ip_address = peer_info["ip_address"]
             port = peer_info["port"]
+            client = Client(ip_address, port)
+            client.connect()
             # print("Attempting connection to:", ip_address, ":", port)  
-            peer_socket.connect((ip_address, port))  # Pass IP address and port as a tuple
-            connected_peers.append(peer_socket)
+            # peer_socket.connect((ip_address, port))  # Pass IP address and port as a tuple
+            client.send_json_file()
+            client.close()
+            connected_peers.append(client)
             print(f"Connected to peer: {ip_address}:{port}")
+
         except ConnectionRefusedError:
             print(f"Connection to peer {ip_address}:{port} refused")
+            client.close()
         except Exception as e:
             print(f"Error connecting to peer {ip_address}:{port}: {e}")
             print("Peer info:", peer_info)
+            client.close()
 
     
 def action(client):
