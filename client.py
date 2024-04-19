@@ -1,7 +1,7 @@
 import socket
 import os
 import json
-import struct
+import tqdm
 from client_action import *
 
 class Client:
@@ -45,8 +45,8 @@ class Client:
             missing_pieces_json =send_missing_pieces()
             if missing_pieces_json:
                 self.send_message(missing_pieces_json)
-                received_message = self.receive_message()   
-                self.received_message_from_seeder(received_message)
+                # received_message = self.receive_message()   
+                self.received_message_from_seeder()
 
 
     def send_filenames_to_server(self):
@@ -90,25 +90,40 @@ class Client:
     """
     Recieve massage from seeder (which is a file) and save it in directory
     """
-    def received_message_from_seeder(self, received_message):
-        print('Received from the server:', received_message)
-        
+    def received_message_from_seeder(self):
         try:
-            received_data = b""
             while True:
-                data = self.socket.recv(1024)
-                if not data:
-                    break
-                received_data += data
-            
-            with open("received_file.txt", "wb") as f:
-                f.write(received_data)
-            
-            print("File parts received successfully.")
+                file_name = self.socket.recv(1024).decode()
+                print(file_name)
+                if not file_name:
+                    break  # No more files to receive
+                file_size = ""
+                while True:
+                    char = self.socket.recv(1).decode()
+                    if char == '\n':
+                        break
+                    file_size += char
+                file_size = int(file_size)  # Ensure conversion to integer
+
+                progress = tqdm.tqdm(unit="B", unit_scale=True, unit_divisor=1000,desc=f"Receiving {file_name}", total=file_size)
+                received_size = 0
+                file_bytes = b""
+
+                while received_size < file_size:
+                    data = self.socket.recv(1000)
+                    received_size += len(data)
+                    progress.update(len(data))
+                    file_bytes += data
+                    
+                with open(file_name, "wb") as file:
+                    file.write(file_bytes)
+                    print(f"{file_name} received successfully.")
+                    file.close()
         except Exception as e:
             print(f"An error occurred while receiving file parts: {e}")
         finally:
             self.socket.close()
+
 
     
 """

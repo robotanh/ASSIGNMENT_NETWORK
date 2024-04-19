@@ -4,7 +4,7 @@ import json
 import socket
 import os
 import sys
-import struct
+
 
 class Seeder:
     def __init__(self, host, port):
@@ -124,15 +124,25 @@ class Server:
         try:
             for part in file_parts:
                 file_path = os.path.join("file_split", part)
+                print(file_path)
                 if os.path.exists(file_path):
                     with open(file_path, "rb") as f:
                         part_data = f.read()
-                    client_socket.send(part_data)
+                    # Send part name and data size first
+                    client_socket.send(f"{part}".encode())  # Sending file part name
+                    client_socket.send(f"{len(part_data)}".encode())  # Sending file part size
+                    client_socket.sendall(part_data)  # Sending file data
+                    # client_socket.send(b"<END>")
                 else:
                     print(f"File part '{part}' not found.")
-            client_socket.close()
+                f.close()
         except Exception as e:
             print(f"Error occurred: {e}")
+        finally:
+            # client_socket.shutdown(socket.SHUT_WR)
+            client_socket.close()
+            print(f"Closed connection with {client_socket}")
+
 
 
     def handle_client_connection(self, client_socket):
