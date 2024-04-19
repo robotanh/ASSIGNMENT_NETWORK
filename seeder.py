@@ -120,42 +120,41 @@ class Server:
             self.handle_connections()
         except KeyboardInterrupt:
             self.shutdown()
-    def send_file_parts(self, file_parts):
+    def send_file_parts(self, client_socket, file_parts):
         try:
             for part in file_parts:
-                # Construct the full path to the file part
-                file_path = os.path.join("split_files", part)
-                
-                # Check if the file exists
+                file_path = os.path.join("file_split", part)
                 if os.path.exists(file_path):
-                    # Read the file part
                     with open(file_path, "rb") as f:
                         part_data = f.read()
-                    
-                    # Send the file part to the client
-                    self.server_socket.send(part_data)
+                    client_socket.send(part_data)
                 else:
                     print(f"File part '{part}' not found.")
-            
-            self.server_socket.close()
+            client_socket.close()
         except Exception as e:
             print(f"Error occurred: {e}")
 
-    def handle_client_connection(self):
+
+    def handle_client_connection(self, client_socket):
         try:
             # Receive the request from the client
-            request_data = self.server_socket.recv(1024).decode('utf-8')
+            request_data = client_socket.recv(1024).decode('utf-8')
             request_parts = json.loads(request_data)["file_parts"]
             
             # Send the requested file parts to the client
-            self.send_file_parts(request_parts)
+            self.send_file_parts(client_socket, request_parts)
         except Exception as e:
             print(f"Error occurred: {e}")
+
     def handle_connections(self):
         while True:
-            client_socket, client_address = self.server_socket.accept()
-            print(f"Connection from {client_address} has been established.")
-            self.handle_client(client_socket)
+            try:
+                client_socket, client_address = self.server_socket.accept()
+                print(f"Connection from {client_address} has been established.")
+                self.handle_client_connection(client_socket)
+            except Exception as e:
+                print(f"Error accepting connections: {e}")
+
 
     def handle_client(self, client_socket):
         try:
