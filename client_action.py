@@ -17,7 +17,7 @@ def find_missing_pieces(json_data, folder_path):
     
     # Find the difference between the required pieces and existing files
     missing_pieces = required_pieces - existing_files
-    missing_pieces_json = json.dumps(list(missing_pieces))
+    missing_pieces_json = json.dumps({"file_parts":list(missing_pieces)})
     return missing_pieces_json
 
 def queue_missing_pieces_for_download(missing_pieces):

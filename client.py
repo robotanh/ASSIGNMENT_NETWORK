@@ -38,15 +38,15 @@ class Client:
             return
 
         with open(file_path, 'r') as f:
-            # json_data = json.load(f)
-            # json_str = json.dumps(json_data)
-            # print(json_str)
-            # self.send_message(json_str) 
+            """
+            missing_pieces_json has the type
+                "file_parts": [pieces]
+            """
             missing_pieces_json =send_missing_pieces()
             if missing_pieces_json:
                 self.send_message(missing_pieces_json)
                 received_message = self.receive_message()   
-                print('Received from the server:', received_message)
+                self.received_message_from_seeder(received_message)
 
 
     def send_filenames_to_server(self):
@@ -87,6 +87,30 @@ class Client:
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
         return None
+    """
+    Recieve massage from seeder (which is a file) and save it in directory
+    """
+    def received_message_from_seeder(self, received_message):
+        print('Received from the server:', received_message)
+        
+        try:
+            received_data = b""
+            while True:
+                data = self.socket.recv(1024)
+                if not data:
+                    break
+                received_data += data
+            
+            with open("received_file.txt", "wb") as f:
+                f.write(received_data)
+            
+            print("File parts received successfully.")
+        except Exception as e:
+            print(f"An error occurred while receiving file parts: {e}")
+        finally:
+            self.socket.close()
+
+    
 """
 when server return a list of peer, connect_with_peers get a list of peers and connect 
 one by one to get pieces
@@ -106,12 +130,12 @@ def connect_with_peers(peers_list_json):
             # peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             ip_address = peer_info["ip_address"]
             port = peer_info["port"]
+
             client = Client(ip_address, port)
             client.connect()
-            # print("Attempting connection to:", ip_address, ":", port)  
-            # peer_socket.connect((ip_address, port))  # Pass IP address and port as a tuple
-            client.send_json_file()
+            client.send_json_file() #send mising file to sever
             client.close()
+
             connected_peers.append(client)
             print(f"Connected to peer: {ip_address}:{port}")
 
@@ -128,6 +152,7 @@ def action(client):
     received_message = client.send_message_to_sever()
     # print('Received from the server:', received_message)
     connect_with_peers(received_message)
+
     
 def client_mode():
     host = '192.168.1.3'

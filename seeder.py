@@ -106,45 +106,81 @@ class Seeder:
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
-def action():
-    HOST = '0.0.0.0'  
-    PORT = 23456        
+class Server:
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # Create a socket object
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def start(self):
+        try:
+            self.server_socket.bind((self.host, self.port))
+            self.server_socket.listen(5)  # Maximum number of queued connections
+            print(f"Server listening on {self.host}:{self.port}...")
+            self.handle_connections()
+        except KeyboardInterrupt:
+            self.shutdown()
+    def send_file_parts(self, file_parts):
+        try:
+            for part in file_parts:
+                # Construct the full path to the file part
+                file_path = os.path.join("split_files", part)
+                
+                # Check if the file exists
+                if os.path.exists(file_path):
+                    # Read the file part
+                    with open(file_path, "rb") as f:
+                        part_data = f.read()
+                    
+                    # Send the file part to the client
+                    self.server_socket.send(part_data)
+                else:
+                    print(f"File part '{part}' not found.")
+            
+            self.server_socket.close()
+        except Exception as e:
+            print(f"Error occurred: {e}")
 
-    try:
-        server_socket.bind((HOST, PORT))
-        
-        # Start listening for incoming connections
-        server_socket.listen(5)  # Maximum number of queued connections
-        
-        print(f"Server listening on {HOST}:{PORT}...")
-
+    def handle_client_connection(self):
+        try:
+            # Receive the request from the client
+            request_data = self.server_socket.recv(1024).decode('utf-8')
+            request_parts = json.loads(request_data)["file_parts"]
+            
+            # Send the requested file parts to the client
+            self.send_file_parts(request_parts)
+        except Exception as e:
+            print(f"Error occurred: {e}")
+    def handle_connections(self):
         while True:
-            # Accept incoming connection
-            client_socket, client_address = server_socket.accept()
-            
+            client_socket, client_address = self.server_socket.accept()
             print(f"Connection from {client_address} has been established.")
-            
-            # Receive data from the client
+            self.handle_client(client_socket)
+
+    def handle_client(self, client_socket):
+        try:
             while True:
                 data = client_socket.recv(1024)  # Buffer size
                 if not data:
                     break
                 print(f"Received from client: {data.decode()}")
-                
-                # Echo back the received data
                 client_socket.sendall(data)
-            
-            # Close the connection with the client
+        except ConnectionResetError:
+            pass  # Client closed the connection abruptly
+        finally:
             client_socket.close()
-            print(f"Closed connection with {client_socket}:{client_address}")
+            print(f"Closed connection with {client_socket}")
 
-    except KeyboardInterrupt:
+    def shutdown(self):
         print("\nKeyboard interrupt detected. Shutting down the server...")
-        server_socket.close()
+        self.server_socket.close()
         sys.exit(0)
+
+def action():
+    HOST = '0.0.0.0'
+    PORT = 23456
+    server = Server(HOST, PORT)
+    server.start()
 
 
 def seeder_mode():
