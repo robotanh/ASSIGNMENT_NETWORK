@@ -93,36 +93,44 @@ class Client:
     def received_message_from_seeder(self):
         try:
             while True:
-                file_name = self.socket.recv(1024).decode()
-                print(file_name)
+                file_name = self.socket.recv(1024).decode().strip()
                 if not file_name:
+                    print("No more files to receive or file name is empty.")
                     break  # No more files to receive
+
                 file_size = ""
                 while True:
                     char = self.socket.recv(1).decode()
                     if char == '\n':
                         break
                     file_size += char
-                file_size = int(file_size)  # Ensure conversion to integer
+                
+                if file_size.strip() == "":
+                    print("File size not received properly or is empty.")
+                    continue  # Skip to the next file or end the loop
+                
+                file_size = int(file_size.strip())  # Ensure conversion to integer
 
-                progress = tqdm.tqdm(unit="B", unit_scale=True, unit_divisor=1000,desc=f"Receiving {file_name}", total=file_size)
-                received_size = 0
-                file_bytes = b""
-
-                while received_size < file_size:
-                    data = self.socket.recv(1000)
-                    received_size += len(data)
-                    progress.update(len(data))
-                    file_bytes += data
-                    
                 with open(file_name, "wb") as file:
-                    file.write(file_bytes)
+                    progress = tqdm.tqdm(total=file_size, unit="B", unit_scale=True, desc=f"Receiving {file_name}")
+                    received_size = 0
+                    while received_size < file_size:
+                        data = self.socket.recv(min(1024, file_size - received_size))
+                        if not data:
+                            print(f"Connection ended unexpectedly while receiving {file_name}.")
+                            break
+                        file.write(data)
+                        received_size += len(data)
+                        progress.update(len(data))
+                    progress.close()
                     print(f"{file_name} received successfully.")
-                    file.close()
+                file.close()
         except Exception as e:
             print(f"An error occurred while receiving file parts: {e}")
         finally:
             self.socket.close()
+
+
 
 
     

@@ -129,13 +129,14 @@ class Server:
                     with open(file_path, "rb") as f:
                         part_data = f.read()
                     # Send part name and data size first
-                    client_socket.send(f"{part}".encode())  # Sending file part name
-                    client_socket.send(f"{len(part_data)}".encode())  # Sending file part size
+                    client_socket.send(f"{part}\n".encode())  # Sending file part name
+                    client_socket.send(f"{len(part_data)}\n".encode())  # Sending file part size
                     client_socket.sendall(part_data)  # Sending file data
                     # client_socket.send(b"<END>")
                 else:
                     print(f"File part '{part}' not found.")
                 f.close()
+                # break
         except Exception as e:
             print(f"Error occurred: {e}")
         finally:
