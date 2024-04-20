@@ -2,6 +2,7 @@ import socket
 import os
 import json
 import tqdm
+import sys
 from client_action import *
 
 class Client:
@@ -96,7 +97,7 @@ class Client:
             file_size = None
             file_data = b""
             progress = None
-
+            file_path ="client_folder"
             buffer = ""
             while True:
                 chunk = self.socket.recv(1024).decode('utf-8', errors='ignore')
@@ -120,7 +121,8 @@ class Client:
 
                     elif cmd == "FILEDATA" and file_name and file_size:
                         print(f"[CLIENT] Receiving the file data.")
-                        with open(file_name, "ab") as file:  # Use append mode
+                        file_path = os.path.join(file_path, file_name)
+                        with open(file_path, "ab") as file:  # Use append mode
                             file.write(data.encode('utf-8', errors='ignore'))
                         if progress:
                             progress.update(len(data.encode()))
@@ -132,15 +134,15 @@ class Client:
                         file_name = None
                         file_size = None
                         file_data = b""
+                        file_path ="client_folder"
                         progress = None
-                        break
-
+                    elif cmd == "CLOSE":
+                        self.socket.close()
+                        print(f"[CLIENT] {data}")
+                        return
         except Exception as e:
             print(f"An error occurred while receiving file parts: {e}")
-        finally:
-            self.socket.close()
-
-
+            sys.exit(1)
 
 
 

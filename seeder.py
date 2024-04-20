@@ -145,7 +145,9 @@ class Server:
                 # Send finish message
                 client_socket.send("FINISH:File transfer complete.\n".encode())
                 print(f"[SEEDER] File transfer complete for {file_name}")
-
+            
+            client_socket.send("CLOSE:Sended all files need\n".encode())    
+            print(f"[SEEDER] End with {file_name}")
         except Exception as e:
             print(f"[SEEDER] An error occurred: {e}")
         finally:
