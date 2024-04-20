@@ -92,43 +92,54 @@ class Client:
     """
     def received_message_from_seeder(self):
         try:
+            file_name = None
+            file_size = None
+            file_data = b""
+            progress = None
+
+            buffer = ""
             while True:
-                file_name = self.socket.recv(1024).decode().strip()
-                if not file_name:
-                    print("No more files to receive or file name is empty.")
-                    break  # No more files to receive
+                chunk = self.socket.recv(1024).decode('utf-8', errors='ignore')
+                buffer += chunk
+                while '\n' in buffer:
+                    msg, buffer = buffer.split('\n', 1)  # Process each complete message one at a time
+                    if ":" not in msg:
+                        print(f"[CLIENT] Invalid message format: {msg}")
+                        continue
 
-                file_size = ""
-                while True:
-                    char = self.socket.recv(1).decode()
-                    if char == '\n':
+                    cmd, data = msg.split(":", 1)
+
+                    if cmd == "FILENAME":
+                        file_name = data.strip()
+                        print(f"[CLIENT] Received the filename: {file_name}.")
+
+                    elif cmd == "FILESIZE":
+                        file_size = int(data.strip())
+                        print(f"[CLIENT] Received the size: {file_size} bytes.")
+                        progress = tqdm.tqdm(total=file_size, unit="B", unit_scale=True, desc=f"Receiving {file_name}")
+
+                    elif cmd == "FILEDATA" and file_name and file_size:
+                        print(f"[CLIENT] Receiving the file data.")
+                        with open(file_name, "ab") as file:  # Use append mode
+                            file.write(data.encode('utf-8', errors='ignore'))
+                        if progress:
+                            progress.update(len(data.encode()))
+
+                    elif cmd == "FINISH":
+                        if progress:
+                            progress.close()
+                        print(f"{file_name} received successfully. {data}")
+                        file_name = None
+                        file_size = None
+                        file_data = b""
+                        progress = None
                         break
-                    file_size += char
-                
-                if file_size.strip() == "":
-                    print("File size not received properly or is empty.")
-                    continue  # Skip to the next file or end the loop
-                
-                file_size = int(file_size.strip())  # Ensure conversion to integer
 
-                with open(file_name, "wb") as file:
-                    progress = tqdm.tqdm(total=file_size, unit="B", unit_scale=True, desc=f"Receiving {file_name}")
-                    received_size = 0
-                    while received_size < file_size:
-                        data = self.socket.recv(min(1024, file_size - received_size))
-                        if not data:
-                            print(f"Connection ended unexpectedly while receiving {file_name}.")
-                            break
-                        file.write(data)
-                        received_size += len(data)
-                        progress.update(len(data))
-                    progress.close()
-                    print(f"{file_name} received successfully.")
-                file.close()
         except Exception as e:
             print(f"An error occurred while receiving file parts: {e}")
         finally:
             self.socket.close()
+
 
 
 

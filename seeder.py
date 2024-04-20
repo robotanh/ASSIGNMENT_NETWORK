@@ -120,29 +120,37 @@ class Server:
             self.handle_connections()
         except KeyboardInterrupt:
             self.shutdown()
-    def send_file_parts(self, client_socket, file_parts):
+    def send_file_parts(self,client_socket, file_paths):
         try:
-            for part in file_parts:
+            for part in file_paths:
                 file_path = os.path.join("file_split", part)
-                print(file_path)
-                if os.path.exists(file_path):
-                    with open(file_path, "rb") as f:
-                        part_data = f.read()
-                    # Send part name and data size first
-                    client_socket.send(f"{part}\n".encode())  # Sending file part name
-                    client_socket.send(f"{len(part_data)}\n".encode())  # Sending file part size
-                    client_socket.sendall(part_data)  # Sending file data
-                    # client_socket.send(b"<END>")
-                else:
-                    print(f"File part '{part}' not found.")
-                f.close()
-                # break
+                file_name = os.path.basename(file_path)
+                file_size = os.path.getsize(file_path)
+
+                # Send file name
+                client_socket.send(f"FILENAME:{file_name}\n".encode())
+                print(f"[SEEDER] Sent filename: {file_name}")
+
+                # Send file size
+                client_socket.send(f"FILESIZE:{file_size}\n".encode())
+                print(f"[SEEDER] Sent filesize: {file_size} bytes")
+
+                # Send file data
+                with open(file_path, "rb") as file:
+                    chunk = file.read(1024)
+                    while chunk:
+                        client_socket.send(f"FILEDATA:{chunk}\n".encode())  # Assuming binary file and UTF-8 encoding issues
+                        chunk = file.read(1024)
+
+                # Send finish message
+                client_socket.send("FINISH:File transfer complete.\n".encode())
+                print(f"[SEEDER] File transfer complete for {file_name}")
+
         except Exception as e:
-            print(f"Error occurred: {e}")
+            print(f"[SEEDER] An error occurred: {e}")
         finally:
-            # client_socket.shutdown(socket.SHUT_WR)
-            client_socket.close()
-            print(f"Closed connection with {client_socket}")
+            # Assuming that the socket should not be closed here to allow multiple files to be sent
+            print(f"[SEEDER] Done sending {file_name}")
 
 
 
