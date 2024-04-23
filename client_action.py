@@ -1,43 +1,79 @@
 import os
 import json
 
-def load_json_data(json_path):
-    """Load data from the JSON file."""
-    with open(json_path, 'r') as file:
-        return json.load(file)
+class TorrentManager:
+    def __init__(self):
+        self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.torrents_dir = os.path.join(self.current_dir, 'torrents')
 
-def list_files_in_folder(folder_path):
-    """List all files in the given folder."""
-    return os.listdir(folder_path)
+    def list_torrent_files(self):
+        files = [f for f in os.listdir(self.torrents_dir) if f.endswith('.json')]
+        if not files:
+            print("No torrent files found.")
+            return None
 
-def find_missing_pieces(json_data, folder_path):
-    """Identify which pieces are missing in the folder."""
-    existing_files = set(list_files_in_folder(folder_path))
-    required_pieces = set(json_data['pieces'])
-    
-    # Find the difference between the required pieces and existing files
-    missing_pieces = required_pieces - existing_files
-    missing_pieces_json = json.dumps({"file_parts":list(missing_pieces)})
-    return missing_pieces_json
+        print("Available torrent files:")
+        for index, file in enumerate(files, start=1):
+            print(f"{index}. {file}")
 
-def queue_missing_pieces_for_download(missing_pieces):
-    """Queue the missing pieces for download. Implement according to your needs."""
-    # This is a placeholder. You might want to implement actual download logic here.
-    return missing_pieces
+        try:
+            file_index = int(input("Enter the number of the file you want to use: ")) - 1
+            if 0 <= file_index < len(files):
+                return files[file_index]
+            else:
+                print("Invalid file number.")
+        except ValueError:
+            print("Please enter a valid number.")
+        return None
 
-def send_missing_pieces():
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    json_path = os.path.join(current_dir, 'torrents', 'ALICE.json')  # Adjust file path
-    if not os.path.exists(json_path):
-        print("File not found:", json_path)
-        return
-    folder_path = 'file_split'  # Adjust this path
-    
-    json_data = load_json_data(json_path)
-    missing_pieces = find_missing_pieces(json_data, folder_path)
-    if missing_pieces:
-        return queue_missing_pieces_for_download(missing_pieces)
-    else:
-        print("All pieces are present in the folder.")
+    def load_json_data(self, json_path):
+        with open(json_path, 'r') as file:
+            return json.load(file)
+
+    def list_files_in_folder(self, folder_path):
+        return os.listdir(folder_path)
+
+    def find_missing_pieces(self, json_data, folder_path):
+        existing_files = set(self.list_files_in_folder(folder_path))
+        required_pieces = set(json_data['pieces'])
+        missing_pieces = required_pieces - existing_files
+        return json.dumps({"file_parts": list(missing_pieces)})
+
+    def queue_missing_pieces_for_download(self, missing_pieces):
+        print("Queuing missing pieces for download:", missing_pieces)
+        return missing_pieces
+
+    def send_missing_pieces(self):
+        torrent_file = self.list_torrent_files()
+        if not torrent_file:
+            return
+
+        json_path = os.path.join(self.torrents_dir, torrent_file)
+        if not os.path.exists(json_path):
+            print("File not found:", json_path)
+            return
+
+        folder_path = 'file_split'  # Adjust this path as necessary
+        json_data = self.load_json_data(json_path)
+        missing_pieces_json = self.find_missing_pieces(json_data, folder_path)
+        if missing_pieces_json:
+            print("Missing pieces JSON:", missing_pieces_json)
+            result = self.queue_missing_pieces_for_download(missing_pieces_json)
+            return result
+        else:
+            print("All pieces are present in the folder.")
 
 
+    # def send_json_file(self):
+    #     torrent_file = self.list_torrent_files()
+    #     if not torrent_file:
+    #         return
+
+    #     file_path = os.path.join(self.torrents_dir, torrent_file)
+    #     if not os.path.exists(file_path):
+    #         print("File not found:", file_path)
+    #         return
+
+    #     missing_pieces_json = self.send_missing_pieces()
+    #     if missing_pieces_json:
+    #         print("Missing pieces JSON:", missing_pieces_json)

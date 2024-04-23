@@ -10,6 +10,7 @@ class Client:
         self.host = host
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.torrent_manager = TorrentManager()
 
     def connect(self, host=None, port=None):
         if host is None and port is None:
@@ -32,22 +33,13 @@ class Client:
     """
 
     def send_json_file(self):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(current_dir, 'torrents', 'ALICE.json')  # Adjust file path
-        if not os.path.exists(file_path):
-            print("File not found:", file_path)
-            return
 
-        with open(file_path, 'r') as f:
-            """
-            missing_pieces_json has the type
-                "file_parts": [pieces]
-            """
-            missing_pieces_json =send_missing_pieces()
-            if missing_pieces_json:
-                self.send_message(missing_pieces_json)
-                # received_message = self.receive_message()   
-                self.received_message_from_seeder()
+        missing_pieces_json = self.torrent_manager.send_missing_pieces()
+        if missing_pieces_json:
+            self.send_message(missing_pieces_json)
+            # print("Sended:"+ missing_pieces_json)
+            # received_message = self.receive_message()   
+            self.received_message_from_seeder()
 
 
     def send_filenames_to_server(self):
@@ -191,7 +183,7 @@ def action(client):
 
     
 def client_mode():
-    host = '192.168.1.3'
+    host ='192.168.1.3'
     port = 12345
     client = Client(host, port)
     client.connect()

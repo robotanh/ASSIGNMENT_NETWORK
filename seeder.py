@@ -204,7 +204,7 @@ def action():
 
 
 def seeder_mode():
-    host = '192.168.1.3'
+    host ='192.168.1.3'
     port = 12345
     client = Seeder(host, port)
     client.connect()
