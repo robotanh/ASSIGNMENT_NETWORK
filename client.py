@@ -3,14 +3,14 @@ import os
 import json
 import tqdm
 import sys
-from client_action import *
+from torrent_action import *
 
 class Client:
-    def __init__(self, host, port):
+    def __init__(self, host, port,torrent_manager):
         self.host = host
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.torrent_manager = TorrentManager()
+        self.torrent_manager = torrent_manager
 
     def connect(self, host=None, port=None):
         if host is None and port is None:
@@ -33,7 +33,7 @@ class Client:
     """
 
     def send_json_file(self):
-
+        # has bug to fix
         missing_pieces_json = self.torrent_manager.send_missing_pieces()
         if missing_pieces_json:
             self.send_message(missing_pieces_json)
@@ -143,7 +143,7 @@ class Client:
 when server return a list of peer, connect_with_peers get a list of peers and connect 
 one by one to get pieces
 """
-def connect_with_peers(peers_list_json):
+def connect_with_peers(peers_list_json,torrent_manager):
     connected_peers = []
 
     # Convert JSON string back to a Python list of dictionaries
@@ -159,35 +159,33 @@ def connect_with_peers(peers_list_json):
             ip_address = peer_info["ip_address"]
             port = peer_info["port"]
 
-            client = Client(ip_address, port)
-            client.connect()
-            client.send_json_file() #send mising file to sever
-            client.close()
+            client4peer = Client(ip_address, port,torrent_manager)
+            client4peer.connect()
+            client4peer.send_json_file() #send mising file to sever
+            client4peer.close()
 
-            connected_peers.append(client)
+            connected_peers.append(client4peer)
             print(f"Connected to peer: {ip_address}:{port}")
 
         except ConnectionRefusedError:
             print(f"Connection to peer {ip_address}:{port} refused")
-            client.close()
+            client4peer.close()
         except Exception as e:
             print(f"Error connecting to peer {ip_address}:{port}: {e}")
             print("Peer info:", peer_info)
-            client.close()
+            client4peer.close()
 
     
-def action(client):
+def action(client,torrent_manager):
     received_message = client.send_message_to_sever()
     # print('Received from the server:', received_message)
-    connect_with_peers(received_message)
+    connect_with_peers(received_message,torrent_manager)
 
     
-def client_mode():
-    host ='192.168.1.3'
-    port = 12345
-    client = Client(host, port)
+def client_mode(host,port,torrent_manager):
+    client = Client(host, port,torrent_manager)
     client.connect()
     # client.send_json_file()
     # send_missing_pieces()
-    action(client)
+    action(client,torrent_manager)
     client.close()

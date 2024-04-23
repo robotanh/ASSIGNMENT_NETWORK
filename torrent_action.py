@@ -5,7 +5,21 @@ class TorrentManager:
     def __init__(self):
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.torrents_dir = os.path.join(self.current_dir, 'torrents')
+        self.torrent_file = self.list_torrent_files()
+    
+    def get_server_info(self):
+        torrentpath = os.path.join(self.torrents_dir,self.torrent_file)
+        with open(torrentpath, 'r') as file:
+            data = json.load(file)
+    
+        ip_address = data['ip_address']
+        port = data['port']
+        
+        return ip_address, port
 
+    """
+    Return torrent file to use
+    """
     def list_torrent_files(self):
         files = [f for f in os.listdir(self.torrents_dir) if f.endswith('.json')]
         if not files:
@@ -44,11 +58,11 @@ class TorrentManager:
         return missing_pieces
 
     def send_missing_pieces(self):
-        torrent_file = self.list_torrent_files()
-        if not torrent_file:
+
+        if not self.torrent_file:
             return
 
-        json_path = os.path.join(self.torrents_dir, torrent_file)
+        json_path = os.path.join(self.torrents_dir, self.torrent_file)
         if not os.path.exists(json_path):
             print("File not found:", json_path)
             return
