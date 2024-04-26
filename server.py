@@ -1,8 +1,8 @@
 import socket
 import threading
 import sys
-import threading
-import time  
+import json
+import socketserver
 
 """
 Format of c: 
@@ -33,65 +33,65 @@ data = {
 • port: peer's port number (integer)
 
 """
-import socket
-import json
 
+
+# List of currently connected clients 
 peers_list = []
 lock = threading.Lock()
 
-def handle_peer_connection(client_socket,client_address):
-    request = client_socket.recv(1024).decode('utf-8')
-    try:
-        request_data = json.loads(request)
 
-        ip_address = request_data.get("ip_address")
-        port = request_data.get("port")
-        flag = request_data.get("flag")
+class MyTCPHandler(socketserver.BaseRequestHandler):
+    """
+    The request handler class for our server.
+
+    It is instantiated once per connection to the server, and must
+    override the handle() method to implement communication to the
+    client.
+    """
+    # def handle(self):
+    #     # self.rfile is a file-like object created by the handler;
+    #     # we can now use e.g. readline() instead of raw recv() calls
+    #     self.data = self.request.recv(1024).strip()
+    #     print("{} wrote:".format(self.client_address[0]))
+    #     print(self.data)
+    #     # Likewise, self.wfile is a file-like object used to write back
+    #     # to the client
+    #     self.request.sendall(self.data.upper())
+
+    def handle(self): 
+        # self.request is the TCP socket connected to the client 
+        self.data = self.request.recv(1024).decode('utf-8')
+        self.data = json.loads(self.data)
+        print(f"Connection from: {self.client_address[0]}")
+        ip_address = self.data.get("ip_address")
+        port = self.data.get("port")
+        flag = self.data.get("flag")
 
         with lock: 
             response_data = {
-            "Peers": peers_list
+                "Peers": peers_list
             }
-            if (flag != "CLIENT"):
-                peers_list.append({
-                    "flag": flag,
-                    "ip_address": ip_address,
-                    "port": port,
-                })
+
+            if (flag != "CLIENT"): 
                 response_data.clear()
-                response_data['failure_reason'] = "Not client"
-            else:
+                response_data["failure_reason"] = "Not client"
+            else: 
+                if all(self.data["ip_address"] != peer["ip_address"] and self.data["port"] != peer["port"] for peer in peers_list):
+                    peers_list.append(self.data)
+
                 print("Currently connected clients:")
                 for peer in peers_list:
                     print(peer)
-               
-        # Here, you could perform any processing with the received data
-        # Write the data to a buffer to store
-        # Send back the IP address to the client
-        # Add client information to the list of connected clients
-        # Print the list of connected clients
-        
+                print("----------")          
         response = json.dumps(response_data)
-        client_socket.send(response.encode('utf-8'))
-        print(f"Closed connection with {client_address[0]}:{client_address[1]}")
-    except json.JSONDecodeError:
-        print("Invalid JSON received")
-    except KeyboardInterrupt: 
-        print("leuleu")
-    client_socket.close()
+        self.request.sendall(response.encode('utf-8'))  
 
-def start_server(host, port):
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((host, port))
-    server_socket.listen(5) # Max of 5 peers 
-    print(f"Server listening on host:{host}, port:{port}")
+if __name__ == "__main__":
+    HOST, PORT = "", 12345
 
-    while True:
-        client_socket, client_address = server_socket.accept()
-
-        print(f"Accepted connection from {client_address[0]}:{client_address[1]}")
-        handle_peer_connection(client_socket,client_address)
-
-
-if __name__ == '__main__':
-    start_server('', 12345)
+    # Create the server, binding to localhost on port 9999
+    with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
+        # Activate the server; this will keep running until you
+        # interrupt the program with Ctrl-C
+        print(f"Server listening on host:{HOST}, port:{PORT}")
+        server.serve_forever()
