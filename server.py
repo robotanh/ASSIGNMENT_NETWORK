@@ -1,91 +1,65 @@
-import socket
-import threading
-import sys
-import json
 import socketserver
+import json
+import threading
 
-"""
-Format of c: 
-<
- socket.socket fd=504, 
- family=AddressFamily.AF_INET,  # IPv4
- type=SocketKind.SOCK_STREAM,   # stream-oriented => TCP
- proto=0,                       # unspecified since it is TCP
- laddr=('172.31.176.1', 12345), # local address
- raddr=('172.31.176.1', 55863)  # remote address
->
-
-# JSON data to be stored
-data = {
-    "name_file": "ALICE.txt",
-    "ip_address": "192.168.1.3",
-    "pieces": files
-}
-
-{
-    "flag": "SEEDER",
-    "ip_address": "192.168.1.3"
-    "port": "23456"
-}
-
-• peer id: peer's self-selected ID, as described above for the tracker request (string)
-• ip: peer's IP address either IPv6 (hexed) or IPv4 (dotted quad) or DNS name (string)
-• port: peer's port number (integer)
-
-"""
-
-# List of currently connected clients 
+# Global list of peers and a lock for thread-safe operations on this list
 peers_list = []
 lock = threading.Lock()
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
-    """
-    The request handler class for our server.
+    def handle(self):
+        # self.request is the TCP socket connected to the client
+        try:
+            # Receive data from the client and decode it
+            self.data = self.request.recv(1024).strip().decode('utf-8')
+            self.data = json.loads(self.data)  # Parse the JSON data
 
-    It is instantiated once per connection to the server, and must
-    override the handle() method to implement communication to the
-    client.
-    """
+            print(f"Connection from: {self.client_address[0]}")
 
-    def handle(self): 
-        # self.request is the TCP socket connected to the client 
-        self.data = self.request.recv(1024).decode('utf-8')
-        self.data = json.loads(self.data)
-        print(f"Connection from: {self.client_address[0]}")
-        ip_address = self.data.get("ip_address")
-        port = self.data.get("port")
-        flag = self.data.get("flag")
+            # Extract data from the received JSON
+            ip_address = self.data.get("ip_address")
+            port = self.data.get("port")
+            flag = self.data.get("flag")
 
-        with lock: 
-            response_data = {
-                "Peers": peers_list
-            }
-            if (flag != "SEEDER"): 
-                response_data.clear()
-                response_data["failure_reason"] = "Not seeder"
-            else: 
-                if all(self.data["ip_address"] != peer["ip_address"] and self.data["port"] != peer["port"] for peer in peers_list):
-                    # Add to list when there is no peers with the same port and ip_adress within
-                    peers_list.append(self.data)
-                elif (flag == "SEEDER_LOGOUT"):
-                    # if a peer sends a SEEDER_LOGOUT flag, it is removed from the list
-                    for peer in peers_list:           
-                        if (peer["ip_address"] == ip_address):
-                            peers_list.remove(peer)
+            # Initialize response_data dictionary
+            response_data = {}
 
+            # Process based on the flag
+            with lock:
+                if flag == "CLIENT":
+                    # For CLIENT, send back the list of peers
+                    response_data["Peers"] = peers_list
+                elif flag == "SEEDER":
+                    # For SEEDER, add the peer to the list if not already present
+                    if all(peer["ip_address"] != ip_address and peer["port"] != port for peer in peers_list):
+                        peers_list.append(self.data)
+                        response_data["Peers"] = peers_list
+                elif flag == "SEEDER_LOGOUT":
+                    # For SEEDER_LOGOUT, remove the peer from the list
+                    peers_list[:] = [peer for peer in peers_list if not (peer["ip_address"] == ip_address and peer["port"] == port)]
+                    response_data["Peers"] = peers_list
+                else:
+                    response_data["failure_reason"] = "Invalid flag"
+
+                # Log current state of peers list
                 print("Currently connected clients:")
                 for peer in peers_list:
                     print(peer)
-                print("----------")          
+                print("----------")
+        except json.JSONDecodeError:
+            response_data = {"error": "Invalid JSON format"}
+        except Exception as e:
+            response_data = {"error": str(e)}
+
+        # Send back the JSON response
         response = json.dumps(response_data)
-        self.request.sendall(response.encode('utf-8'))  
+        self.request.sendall(response.encode('utf-8'))
+        self.request.close()
 
 if __name__ == "__main__":
-
     HOST, PORT = "", 12345
-    # Create the server, binding to localhost on port 9999
+
+    # Create the server, binding to localhost on the specified port
     with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
-        # Activate the server; this will keep running until you
-        # interrupt the program with Ctrl-C
-        print(f"Server listening on host:{HOST}, port:{PORT}")
+        print(f"Server listening on {HOST}:{PORT}")
         server.serve_forever()
