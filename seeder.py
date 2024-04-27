@@ -4,6 +4,7 @@ import json
 import socket
 import os
 import sys
+import tqdm
 
 
 class Seeder:
@@ -58,31 +59,7 @@ class Seeder:
                         conn.sendall(b'File not found')
                 print("Finished serving file piece.")
 
-    def get_filenames_in_folder(self):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        folder_path = os.path.join(current_dir, 'file_split')
-        filenames = os.listdir(folder_path)
-        filenames = [f for f in filenames if os.path.isfile(os.path.join(folder_path, f))]
-        return filenames
-    
-    def send_filenames_to_server(self):
-        filenames = self.get_filenames_in_folder()
-        if not filenames:
-            print("No files found in the folder.")
-            return
 
-        filenames_str = '\n'.join(filenames)
-        print("Sent list of filenames to server.")
-        print(filenames_str)
-        self.send_message(filenames_str)
-        received_message = self.receive_message()
-        print('Received from the server:', received_message)
-
-        if 'Others client want to download piece' in received_message:
-            self.close()  # Close connection with server
-            self.serve_file_piece()  # Serve file piece to other client
-            # Optionally, reconnect to main server after serving
-            # self.connect()
 
     """
 
@@ -120,7 +97,7 @@ class Server:
             self.handle_connections()
         except KeyboardInterrupt:
             self.shutdown()
-    def send_file_parts(self,client_socket, file_paths):
+    def send_file_parts(self, client_socket, file_paths):
         try:
             for part in file_paths:
                 file_path = os.path.join("file_split", part)
@@ -135,12 +112,18 @@ class Server:
                 client_socket.send(f"FILESIZE:{file_size}\n".encode())
                 print(f"[SEEDER] Sent filesize: {file_size} bytes")
 
+                # Initialize progress bar
+                progress = tqdm.tqdm(total=file_size, unit="B", unit_scale=True, desc=f"Sending {file_name}", ascii=True, colour='green')
+
                 # Send file data
                 with open(file_path, "rb") as file:
                     chunk = file.read(1024)
                     while chunk:
-                        client_socket.send(f"FILEDATA:{chunk}\n".encode())  # Assuming binary file and UTF-8 encoding issues
+                        client_socket.send(f"FILEDATA:{chunk}\n".encode())  # Send the data as chunks
+                        progress.update(len(chunk))  # Update the progress bar
                         chunk = file.read(1024)
+
+                progress.close()  # Ensure the progress bar is closed after the file is fully sent
 
                 # Send finish message
                 client_socket.send("FINISH:File transfer complete.\n".encode())

@@ -42,26 +42,6 @@ class Client:
             self.received_message_from_seeder()
 
 
-    def send_filenames_to_server(self):
-        filenames = self.get_filenames_in_folder()
-        if not filenames:
-            print("No files found in the folder.")
-            return
-
-        filenames_str = '\n'.join(filenames)
-        print("Sent list of filenames to server.")
-        print(filenames_str)
-        self.send_message(filenames_str)
-        received_message = self.receive_message()
-        print('Received from the server:', received_message)
-
-    def get_filenames_in_folder(self):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        folder_path = os.path.join(current_dir, 'file_split')
-        filenames = os.listdir(folder_path)
-        filenames = [f for f in filenames if os.path.isfile(os.path.join(folder_path, f))]
-        return filenames
-    
 
     def send_message_to_sever(self):
         try:
@@ -89,8 +69,9 @@ class Client:
             file_size = None
             file_data = b""
             progress = None
-            file_path ="client_folder"
+            file_path = "client_folder"
             buffer = ""
+
             while True:
                 chunk = self.socket.recv(1024).decode('utf-8', errors='ignore')
                 buffer += chunk
@@ -109,15 +90,19 @@ class Client:
                     elif cmd == "FILESIZE":
                         file_size = int(data.strip())
                         print(f"[CLIENT] Received the size: {file_size} bytes.")
-                        progress = tqdm.tqdm(total=file_size, unit="B", unit_scale=True, desc=f"Receiving {file_name}")
+                        # if progress:  # Close any existing progress bar
+                        #     progress.close()
+                        # progress = tqdm.tqdm(total=290, unit="B", unit_scale=True, desc=f"Receiving {file_name}", ascii=True, colour='green')
 
                     elif cmd == "FILEDATA" and file_name and file_size:
                         print(f"[CLIENT] Receiving the file data.")
                         file_path = os.path.join(file_path, file_name)
+                        data_bytes = data.encode('utf-8', errors='ignore')
+                        progress = tqdm.tqdm(total=len(data_bytes), unit="B", unit_scale=True, desc=f"Receiving {file_name}", ascii=True, colour='green')
                         with open(file_path, "ab") as file:  # Use append mode
-                            file.write(data.encode('utf-8', errors='ignore'))
+                            file.write(data_bytes)
                         if progress:
-                            progress.update(len(data.encode()))
+                            progress.update(len(data_bytes))  # Update progress with the length of bytes actually written
 
                     elif cmd == "FINISH":
                         if progress:
@@ -126,8 +111,9 @@ class Client:
                         file_name = None
                         file_size = None
                         file_data = b""
-                        file_path ="client_folder"
+                        file_path = "client_folder"  # Reset the file path
                         progress = None
+
                     elif cmd == "CLOSE":
                         self.socket.close()
                         print(f"[CLIENT] {data}")
@@ -143,38 +129,52 @@ class Client:
 when server return a list of peer, connect_with_peers get a list of peers and connect 
 one by one to get pieces
 """
-def connect_with_peers(peers_list_json,torrent_manager):
-    connected_peers = []
+def connect_with_peers(peers_list_json, torrent_manager):
 
-    # Convert JSON string back to a Python list of dictionaries
-    peers_dict = json.loads(peers_list_json)
-    peers_list = peers_dict.get("Peers", [])
+    try:
+        # Convert JSON string back to a Python list of dictionaries
+        peers_dict = json.loads(peers_list_json)
+        peers_list = peers_dict.get("Peers", [])
+    except json.JSONDecodeError:
+        print("Failed to decode JSON from provided string")
+    except Exception as e:
+        print(f"An unexpected error occurred while decoding JSON: {e}")
 
-    ip_address = None
-    port = None
     for peer_info in peers_list:
+        ip_address = peer_info.get("ip_address")
+        port = peer_info.get("port")
+        if not ip_address or not port:
+            print("Invalid IP address or port:", peer_info)
+            continue
 
+        client4peer = None
         try:
-            # peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            ip_address = peer_info["ip_address"]
-            port = peer_info["port"]
-
-            client4peer = Client(ip_address, port,torrent_manager)
+            client4peer = Client(ip_address, port, torrent_manager)
             client4peer.connect()
-            client4peer.send_json_file() #send mising file to sever
-            client4peer.close()
-
-            connected_peers.append(client4peer)
+            client4peer.send_json_file()  # Send missing file to server
             print(f"Connected to peer: {ip_address}:{port}")
 
         except ConnectionRefusedError:
             print(f"Connection to peer {ip_address}:{port} refused")
-            client4peer.close()
+
+        except socket.timeout:
+            print(f"Timeout occurred when connecting to {ip_address}:{port}")
+
+        except socket.error as sock_err:
+            print(f"Socket error when connecting to {ip_address}:{port}: {sock_err}")
+
         except Exception as e:
             print(f"Error connecting to peer {ip_address}:{port}: {e}")
             print("Peer info:", peer_info)
-            client4peer.close()
 
+        finally:
+            if client4peer is not None:
+                try:
+                    client4peer.close()
+                except Exception as e:
+                    print(f"Error closing connection to {ip_address}:{port}: {e}")
+
+   
     
 def action(client,torrent_manager):
     received_message = client.send_message_to_sever()
