@@ -34,11 +34,9 @@ data = {
 
 """
 
-
 # List of currently connected clients 
 peers_list = []
 lock = threading.Lock()
-
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
     """
@@ -48,15 +46,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     override the handle() method to implement communication to the
     client.
     """
-    # def handle(self):
-    #     # self.rfile is a file-like object created by the handler;
-    #     # we can now use e.g. readline() instead of raw recv() calls
-    #     self.data = self.request.recv(1024).strip()
-    #     print("{} wrote:".format(self.client_address[0]))
-    #     print(self.data)
-    #     # Likewise, self.wfile is a file-like object used to write back
-    #     # to the client
-    #     self.request.sendall(self.data.upper())
 
     def handle(self): 
         # self.request is the TCP socket connected to the client 
@@ -71,13 +60,18 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             response_data = {
                 "Peers": peers_list
             }
-
-            if (flag != "CLIENT"): 
+            if (flag != "SEEDER"): 
                 response_data.clear()
-                response_data["failure_reason"] = "Not client"
+                response_data["failure_reason"] = "Not seeder"
             else: 
                 if all(self.data["ip_address"] != peer["ip_address"] and self.data["port"] != peer["port"] for peer in peers_list):
+                    # Add to list when there is no peers with the same port and ip_adress within
                     peers_list.append(self.data)
+                elif (flag == "SEEDER_LOGOUT"):
+                    # if a peer sends a SEEDER_LOGOUT flag, it is removed from the list
+                    for peer in peers_list:           
+                        if (peer["ip_address"] == ip_address):
+                            peers_list.remove(peer)
 
                 print("Currently connected clients:")
                 for peer in peers_list:
@@ -87,8 +81,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         self.request.sendall(response.encode('utf-8'))  
 
 if __name__ == "__main__":
-    HOST, PORT = "", 12345
 
+    HOST, PORT = "", 12345
     # Create the server, binding to localhost on port 9999
     with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
         # Activate the server; this will keep running until you
