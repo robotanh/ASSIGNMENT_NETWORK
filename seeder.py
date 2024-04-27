@@ -5,6 +5,7 @@ import socket
 import os
 import sys
 import tqdm
+import select
 
 
 class Seeder:
@@ -66,16 +67,25 @@ class Seeder:
     SEND FLAG, IPADDRESS, PORT TO SEVER
 
     """
-    def send_message_to_sever(self):
+    def send_message_to_sever(self,mode):
         try:
             hostname = socket.gethostname()
             ipv4_address = socket.gethostbyname(hostname)
-            message = {
+            message_login = {
                 "flag": "SEEDER",
                 "ip_address": ipv4_address,
                 "port": 23456
             }
-            self.socket.send(json.dumps(message).encode('utf-8'))
+            message_logout = {
+                "flag": "SEEDER_LOGOUT",
+                "ip_address": ipv4_address,
+                "port": 23456
+            }
+            if mode == "LOGIN":
+                self.socket.send(json.dumps(message_login).encode('utf-8'))
+            elif mode == "LOGOUT":
+                self.socket.send(json.dumps(message_logout).encode('utf-8'))
+
             received_message = self.receive_message()
             print('Received from the server:', received_message)
         except socket.gaierror:
@@ -149,13 +159,22 @@ class Server:
             self.send_file_parts(client_socket, request_parts)
         except Exception as e:
             print(f"Error occurred: {e}")
+        finally:
+            client_socket.close()
 
     def handle_connections(self):
         while True:
             try:
+                
+                shutdown_input = input("Type 'close' to shut down the server: ")
+                if shutdown_input.lower() == 'close':
+                    self.shutdown()
+                else:
+                    print("Invalid input. Server will continue running.")
                 client_socket, client_address = self.server_socket.accept()
                 print(f"Connection from {client_address} has been established.")
                 self.handle_client_connection(client_socket)
+
             except Exception as e:
                 print(f"Error accepting connections: {e}")
 
@@ -189,6 +208,7 @@ def action():
 def seeder_mode(host,port):
     client = Seeder(host, port)
     client.connect()
-    client.send_message_to_sever()
+    client.send_message_to_sever("LOGIN")
     action()
+    client.send_message_to_sever("LOGOUT")
     client.close()
