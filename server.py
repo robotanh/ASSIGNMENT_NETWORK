@@ -36,7 +36,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                         response_data["Peers"] = peers_list
                 elif flag == "SEEDER_LOGOUT":
                     # For SEEDER_LOGOUT, remove the peer from the list
-                    peers_list[:] = [peer for peer in peers_list if not (peer["ip_address"] == ip_address and peer["port"] == port)]
+                    for peer in peers_list:           
+                        if (peer["ip_address"] == ip_address and peer["port"] == port):
+                            peers_list.remove(peer)
                     response_data["Peers"] = peers_list
                 else:
                     response_data["failure_reason"] = "Invalid flag"
