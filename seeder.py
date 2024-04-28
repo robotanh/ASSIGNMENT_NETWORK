@@ -51,7 +51,7 @@ class Seeder:
                         break
                     # Assume data is the filename to send
                     filename = data.decode('ascii')
-                    file_path = os.path.join('file_split', filename)
+                    file_path = os.path.join('seeder_folder', filename)
                     if os.path.exists(file_path):
                         with open(file_path, 'rb') as f:
                             piece = f.read()
@@ -110,7 +110,7 @@ class Server:
     def send_file_parts(self, client_socket, file_paths):
         try:
             for part in file_paths:
-                file_path = os.path.join("file_split", part)
+                file_path = os.path.join("seeder_folder", part)
                 file_name = os.path.basename(file_path)
                 file_size = os.path.getsize(file_path)
 

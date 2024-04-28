@@ -67,7 +67,7 @@ class TorrentManager:
             print("File not found:", json_path)
             return
 
-        folder_path = 'file_split'  # Adjust this path as necessary
+        folder_path = 'seeder_folder'  # Adjust this path as necessary
         json_data = self.load_json_data(json_path)
         missing_pieces_json = self.find_missing_pieces(json_data, folder_path)
         if missing_pieces_json:

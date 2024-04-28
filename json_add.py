@@ -2,7 +2,7 @@ import os
 import json
 
 # Directory containing the files
-folder_path = "file_split"
+folder_path = "seeder_folder"
 
 # Get list of filenames in the folder
 files = os.listdir(folder_path)
