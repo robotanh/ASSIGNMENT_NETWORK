@@ -111,6 +111,10 @@ class Server:
         try:
             for part in file_paths:
                 file_path = os.path.join("seeder_folder", part)
+                if not os.path.exists(file_path):
+                    print(f"[SEEDER] File {file_path} not found. Skipping...")
+                    continue  # Skip to the next file if it doesn't exist
+
                 file_name = os.path.basename(file_path)
                 file_size = os.path.getsize(file_path)
 
@@ -138,14 +142,14 @@ class Server:
                 # Send finish message
                 client_socket.send("FINISH:File transfer complete.\n".encode())
                 print(f"[SEEDER] File transfer complete for {file_name}")
-            
-            client_socket.send("CLOSE:Sended all files need\n".encode())    
+
+            client_socket.send("CLOSE:Sended all files needed\n".encode())    
             print(f"[SEEDER] End with {file_name}")
         except Exception as e:
             print(f"[SEEDER] An error occurred: {e}")
         finally:
             # Assuming that the socket should not be closed here to allow multiple files to be sent
-            print(f"[SEEDER] Done sending {file_name}")
+            print(f"[SEEDER] Done sending all files")
 
 
 
