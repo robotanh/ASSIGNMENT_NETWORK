@@ -13,9 +13,14 @@ Next run the server:
 ```bash
 python server.py
 ```
-To utilize the Torrent system, first, navigate to the project directory in your terminal. Then, to
-start the server, run the following command:
+To utilize the Torrent system, first, navigate to the project directory in your terminal. Then, run the following command: 
 ```bash
 python main.py
 ```
-Then follow the instruction to select the necessary mode.
+The screen will display four options: 
+1. Client Mode
+2. Seeder Mode
+3. Split file mode
+4. Make torrent file mode
+
+Type in the corresponding option to continue the workflow.  
