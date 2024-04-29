@@ -28,7 +28,7 @@ def create_torrent_file( main_file_name, output_file):
     with open(output_file, "w") as json_file:
         json.dump(data, json_file, indent=4)
 
-    print("JSON file has been created successfully.")
+    print("Torrent file has been created successfully.")
 
 # Example usage:
 # create_torrent_file( "ALICE.txt","output.json")

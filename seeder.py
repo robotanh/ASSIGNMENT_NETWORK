@@ -1,11 +1,10 @@
-import subprocess
-import re
+
 import json
 import socket
 import os
 import sys
 import tqdm
-import select
+
 
 
 class Seeder:
@@ -87,7 +86,7 @@ class Seeder:
                 self.socket.send(json.dumps(message_logout).encode('utf-8'))
 
             received_message = self.receive_message()
-            print('Received from the server:', received_message)
+            # print('Received from the server:', received_message)
         except socket.gaierror:
             print("There was an error resolving the hostname.")
         except Exception as e:
@@ -170,11 +169,11 @@ class Server:
         while True:
             try:
                 
-                shutdown_input = input("Type 'close' to shut down the server: ")
+                shutdown_input = input("Type 'close' to shut down the server, type any for seeding file: ")
                 if shutdown_input.lower() == 'close':
                     self.shutdown()
                 else:
-                    print("Invalid input. Server will continue running.")
+                    print("Server is running.")
                 client_socket, client_address = self.server_socket.accept()
                 print(f"Connection from {client_address} has been established.")
                 self.handle_client_connection(client_socket)
