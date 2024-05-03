@@ -86,7 +86,7 @@ class Seeder:
                 self.socket.send(json.dumps(message_logout).encode('utf-8'))
 
             received_message = self.receive_message()
-            # print('Received from the server:', received_message)
+            print('Received from the server:', received_message)
         except socket.gaierror:
             print("There was an error resolving the hostname.")
         except Exception as e:
@@ -171,7 +171,9 @@ class Server:
                 
                 shutdown_input = input("Type 'close' to shut down the server, type any for seeding file: ")
                 if shutdown_input.lower() == 'close':
+                    # client.send_message_to_sever("LOGOUT")
                     self.shutdown()
+                    break
                 else:
                     print("Server is running.")
                 client_socket, client_address = self.server_socket.accept()
@@ -199,7 +201,7 @@ class Server:
     def shutdown(self):
         print("\nKeyboard interrupt detected. Shutting down the server...")
         self.server_socket.close()
-        sys.exit(0)
+        # sys.exit(0)
 
 def action():
     HOST = '0.0.0.0'
@@ -214,4 +216,5 @@ def seeder_mode(host,port):
     client.send_message_to_sever("LOGIN")
     action()
     client.send_message_to_sever("LOGOUT")
+    print("logout")
     client.close()
