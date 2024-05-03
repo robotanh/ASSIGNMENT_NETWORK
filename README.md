@@ -23,4 +23,4 @@ The screen will display four options:
 3. Split file mode
 4. Make torrent file mode
 
-Type in the corresponding option to continue the workflow.  
+Type in the corresponding option to continue the workflow. For more details on the manual, refer to the **Manual** section of our [Report](https://drive.google.com/file/d/1h4DL5IqhcN2Emrm99tXd2CkrZIf3-cqc/view?usp=sharing)
