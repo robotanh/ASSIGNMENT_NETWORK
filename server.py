@@ -15,6 +15,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             self.data = json.loads(self.data)  # Parse the JSON data
 
             print(f"Connection from: {self.client_address[0]}")
+            print(self.data)
 
             # Extract data from the received JSON
             ip_address = self.data.get("ip_address")
@@ -31,8 +32,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                     response_data["Peers"] = peers_list
                 elif flag == "SEEDER":
                     # For SEEDER, add the peer to the list if not already present
-                    if all(peer["ip_address"] != ip_address and peer["port"] != port for peer in peers_list):
+                    if all(peer["ip_address"] != ip_address or peer["port"] != port for peer in peers_list):
                         peers_list.append(self.data)
+                        response_data["Peers"] = peers_list
+                    else:
                         response_data["Peers"] = peers_list
                 elif flag == "SEEDER_LOGOUT":
                     # For SEEDER_LOGOUT, remove the peer from the list
