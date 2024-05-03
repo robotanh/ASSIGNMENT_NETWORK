@@ -20,12 +20,12 @@ def main():
 
     if mode == "1":
         torrent_manager = TorrentManager()
-        host, port = torrent_manager.get_server_info()
+        host, port,name_file = torrent_manager.get_server_info()
         client_mode(host, port, torrent_manager)
     elif mode == "2":
         torrent_manager = TorrentManager()
-        host, port = torrent_manager.get_server_info()
-        seeder_mode(host, port)
+        host, port,name_file = torrent_manager.get_server_info()
+        seeder_mode(host, port,name_file)
     elif mode == "3":
         print("You have selected Split File Mode.")
         file_path_input = input("Enter the path of the file you want to split: ")

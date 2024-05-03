@@ -66,19 +66,21 @@ class Seeder:
     SEND FLAG, IPADDRESS, PORT TO SEVER
 
     """
-    def send_message_to_sever(self,mode):
+    def send_message_to_sever(self,mode,name_file):
         try:
             hostname = socket.gethostname()
             ipv4_address = socket.gethostbyname(hostname)
             message_login = {
                 "flag": "SEEDER",
                 "ip_address": ipv4_address,
-                "port": 23456
+                "port": 23456,
+                "name_file":name_file
             }
             message_logout = {
                 "flag": "SEEDER_LOGOUT",
                 "ip_address": ipv4_address,
-                "port": 23456
+                "port": 23456,
+                "name_file":name_file
             }
             if mode == "LOGIN":
                 self.socket.send(json.dumps(message_login).encode('utf-8'))
@@ -211,13 +213,13 @@ def action():
 
 
 
-def seeder_mode(host,port):
+def seeder_mode(host,port,name_file):
     client = Seeder(host, port)
     client.connect()
-    client.send_message_to_sever("LOGIN")
+    client.send_message_to_sever("LOGIN",name_file)
     client.close()
     action()
     client.connect()
-    client.send_message_to_sever("LOGOUT")
+    client.send_message_to_sever("LOGOUT",name_file)
     print("logout")
     client.close()

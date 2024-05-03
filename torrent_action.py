@@ -14,8 +14,9 @@ class TorrentManager:
     
         ip_address = data['ip_address']
         port = data['port']
+        name_file = data['name_file']
         
-        return ip_address, port
+        return ip_address, port ,name_file
 
     """
     Return torrent file to use
