@@ -210,11 +210,14 @@ def action():
     server.start()
 
 
+
 def seeder_mode(host,port):
     client = Seeder(host, port)
     client.connect()
     client.send_message_to_sever("LOGIN")
+    client.close()
     action()
+    client.connect()
     client.send_message_to_sever("LOGOUT")
     print("logout")
     client.close()
